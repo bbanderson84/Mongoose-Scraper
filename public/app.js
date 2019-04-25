@@ -41,12 +41,13 @@ $(document).on("click", "#savenote", function () {
         method: "POST",
         url: "/articles/" + thisId,
         data: {
-            title: $("#titleinput").val(),
-            body: $("#bodyinput").val()
+            title: $("#title-note").val(),
+            body: $("#body-note").val()
         }
     })
     .then(function(data){
         console.log(data);
+        window.location.replace("/articles/" + data._id);
 
         $("#notes").empty();
 
@@ -54,5 +55,18 @@ $(document).on("click", "#savenote", function () {
 
     $("#titleinput").val("");
     $("#bodyinput").val("");
+});
+
+$(document).on("click", "#delete-note", function () {
+    var thisId = $(this).attr("data-id");
+    $.ajax({
+        method: "DELETE",
+        url: "/articles/" + thisId
+    })
+    .then(function(data) {
+        console.log(data);
+        location.reload();
+    });
+
 });
 
