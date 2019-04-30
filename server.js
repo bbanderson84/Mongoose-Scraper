@@ -18,11 +18,11 @@ var cheerio = require("cheerio");
 
 
 
-// Set mongoose to leverage built in JavaScript ES6 Promises
+// Set mongoose 
 mongoose.Promise = Promise;
 
 //Define port
-var port = process.env.PORT || 3000
+var PORT = process.env.PORT || 3000
 
 //initialize express
 var app = express();
@@ -32,9 +32,7 @@ app.use(logger("dev"));
 app.use(bodyParser.urlencoded({extended: false}));
 
 
-
-
-// serve static content for the app from public directory in application
+// public directory in application
 app.use(express.static("public"));
 
 //set handlebars
@@ -49,11 +47,11 @@ mongoose.connect("mongodb://localhost/mongoosescraperdb", { useNewUrlParser: tru
 
 app.get("/", function (req, res) {
     Article.find({"saved": false}, function(err, data) {
-        var hbObject = {
+        var hbsObject = {
             article: data
         };
-        console.log(hbObject);
-        res.render("home", hbObject);
+        console.log(hbsObject);
+        res.render("home", hbsObject);
     });
 });
 
@@ -64,38 +62,76 @@ app.get("/saved", function (req, res) {
         if (err) {
             console.log(err);
         } else {
-            var hbObject = {
+            var hbsObject = {
                 article: articles
             }
-            console.log("hbObject:", hbObject);
-            res.render('saved', hbObject);
+            console.log("hbsObject:", hbsObject);
+            res.render("saved", hbsObject);
         }
     });
 });
 
-// get route to scrape https://slashdot.org/
+// get route to scrape reddit
 app.get("/scrape", function (req, res) {
     //grab body of html with axios
-    axios.get("https://slashdot.org/").then(function(error, response) {
-        if (error) {
-            console.log("Request error:", error);
-        }
+    axios.get("https://old.reddit.com/new/").then(function(response) {
+        // if (error) {
+        //     console.log("Request error:", error);
+        // }
     
     //load into cheerio and save it to $ for shorthand selector
         var $ = cheerio.load(response.data);
-        // grab every h2 within article tag 
-        $("article").each(function(i, element) {
+        // var result = {};
+      
+
+        // // grab every h2 within article tag 
+        // $("p.summary").each(function(i, element) {
+        //     // var title = $(element).text();
+        //     // var link = $(element).children().attr("href");
+        //     var summary =$(element).children("h2").text();
+        //     // result.link = $(this).find("a data-click-id").attr("href");
+        //     // result.summary = $(this).find("p").text().trim();
+        //     console.log(title);
+        //     console.log(link);
+        //     console.log(summary);
+        
+
+
+
+        //     results.push({
+        //         // title: title,
+        //         // link: link,
+        //         summary: summary
+        //       });
+        // });
+
+
+        $("p.title").each(function(i, element) {
             //save empty result object
-            var result = {};
+            var results = {};
             //add text, href of link, summary and save them of properties of result object
-            result.title = $(this).find("h2 span.story-title a").text();
-            result.link = $(this).find("h2 span.story-title a").attr("href");
-            result.summary = $(this).find("div.p").text().trim();
+         results.title = $(element).text();
+         results.link = $(element).children().attr("href");
+        //  results.summary =$(element).children("h2").text();
+            // result.link = $(this).find("a data-click-id").attr("href");
+            // result.summary = $(this).find("p").text().trim();
+            console.log(results.title);
+            console.log(results.link);
+            // console.log(results.summary);
+        
 
-            var entry = new Article(result);
-            
 
-            // create new article using 'result' object built from scrape
+
+            // results.push({
+            //     title: title,
+            //     link: link,
+            //     summary: summary
+            //   });
+        // });
+
+            var entry = new Article(results);
+
+            // save entry to db
             entry.save(function (err, doc) {
                 if (err) {
                     console.log(err);
@@ -103,16 +139,16 @@ app.get("/scrape", function (req, res) {
                     console.log(doc);
                 }
             });
-       
-        });
 
+        });
         // send message to client
         res.send("Scrape Complete");
 
     });
+
 });
 
-//route for gett all articles from db
+//route for getting  articles from db
 app.get("/articles", function (req, res) {
     Article.find({})
     .then(function(doc) {
@@ -141,26 +177,27 @@ app.get("/articles/:id", function (req, res){
 // route for saving and updating articles note
 app.post("/articles/save/:id", function (req, res) {
     //if note created, find article with id equal to req.params.id. update article to be associate with the new note
-    Article.findOneAndUpdate({ "_id": req.params.id }, {saved: true});
-
-    }).then(function(doc) {
+    Article.findOneAndUpdate({ "_id": req.params.id }, {saved: true})
+    .exec(function(doc) {
         res.json(doc);
     })
     .catch(function(err) {
         res.json(err);
     });
+
+});
 
 app.post("/articles/delete/:id", function (req, res) {
         //if note created, find article with id equal to req.params.id. update article to be associate with the new note
-    Article.findOneAndUpdate({ "_id": req.params.id }, {saved: false});
-    
-    }).then(function(doc) {
+    Article.findOneAndUpdate({ "_id": req.params.id }, {saved: false, "notes": []})
+    .exec(function(doc) {
         res.json(doc);
     })
     .catch(function(err) {
         res.json(err);
     });
-    
+});
+
 
 app.post("/notes/save/:id", function (req, res) {
    var newNote = new Note({
@@ -172,7 +209,7 @@ app.post("/notes/save/:id", function (req, res) {
        if (err) {
            console.log(err);
        } else {
-           Article.findOneAndUpdate({"_id": req.params.id }, {$push: {"notes": note } })
+        Article.findOneAndUpdate({"_id": req.params.id }, {$push: {"notes": note } })
        .exec(function(err) {
            if (err) {
                console.log(err);
@@ -211,3 +248,4 @@ app.delete("/notes/delete/:note_id/:article_id", function (req, res) {
 app.listen(PORT, function () {
     console.log("app running on port " + PORT + "!");
 });
+

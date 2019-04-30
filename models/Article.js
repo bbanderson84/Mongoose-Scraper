@@ -1,4 +1,5 @@
 var mongoose = require("mongoose");
+var Mpte = require("./Note");
 
 //Save a reference to schema constructor
 var Schema = mongoose.Schema;
@@ -9,19 +10,25 @@ var ArticleSchema = new Schema({
         type: String,
         required: true
     },
-    summary: {
+    // summary: {
+    //     type: String,
+    //     required: true
+    // },
+
+    link: {
         type: String,
         required: true
     },
 
-    url: {
-        type: String,
-        required: true
+    saved: {
+        type: Boolean,
+        default: false
     },
-    note: {
+
+    notes: [{
         type: Schema.Types.ObjectId,
         ref: "Note"
-    }
+    }]
 });
 
 // Creates model from above schema using mongoose's model method
