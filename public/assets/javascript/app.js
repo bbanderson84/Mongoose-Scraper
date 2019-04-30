@@ -1,6 +1,7 @@
 
 // scrape button function
 $("#scrape").on("click", function () {
+    console.log("button worked");
     $.ajax({
         method: "GET",
         url: "/scrape",
@@ -13,6 +14,7 @@ $("#scrape").on("click", function () {
 
 // save article button function
 $(".save").on("click", function () {
+    console.log("button worked");
     var thisId = $(this).attr("data-id");
     $.ajax({
         method: "POST",

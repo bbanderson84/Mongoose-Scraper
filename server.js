@@ -13,9 +13,9 @@ var Article = require("./models/Article.js");
 
 //scraping tools
 var request = require("request");
-var axios = require("axios");
 var cheerio = require("cheerio");
 
+var axios = require("axios");
 
 
 // Set mongoose 
@@ -38,7 +38,8 @@ app.use(express.static("public"));
 //set handlebars
 var exphbs = require("express-handlebars");
 
-app.engine("handlebars", exphbs({defaultLayout: "main"}));
+app.engine("handlebars", exphbs({defaultLayout: "main",
+partialsDir: path.join(__dirname, "/views/layouts/partials")}));
 app.set("view engine", "handlebars");
 
 mongoose.connect("mongodb://localhost/mongoosescraperdb", { useNewUrlParser: true });
